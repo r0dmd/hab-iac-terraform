@@ -1,7 +1,34 @@
-output "files_created" {
-  description = "Archivos creados por Terraform"
+output "project_summary" {
+  description = "Resumen completo del proyecto"
   value = {
-    config_file = local_file.config.filename
-    backup_file = var.create_backup ? local_file.backup[0].filename : "No se creó backup"
+    project_info = {
+      name        = var.project_name
+      environment = var.environment
+      is_prod     = local.is_production
+    }
+
+    storage = {
+      databases_count = length(var.databases)
+      total_gb       = local.total_storage_gb
+      backup_enabled = length([for db in var.databases : db if db.backup])
+    }
+
+    services = {
+      total_services = length(var.service_ports)
+      public_count   = length(local.public_ports)
+      private_count  = length(local.private_ports)
+    }
   }
+}
+
+output "files_created" {
+  description = "Lista de todos los archivos creados"
+  value = concat(
+    [local_file.advanced_config.filename],
+    [local_file.services_config.filename],
+    [local_file.summary.filename],
+    [local_file.calculated_config.filename],
+    [for file in local_file.database_configs : file.filename],
+    [for file in local_file.feature_configs : file.filename]
+  )
 }
